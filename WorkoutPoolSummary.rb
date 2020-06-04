@@ -12,15 +12,24 @@ class Fixnum
 end
 
 file_location = ARGV[0]
-start_time    = ARGV[1] ? Time.parse(ARGV[1]) : 7.day.ago
-end_time      = ARGV[2] ? Time.parse(ARGV[2]) : Time.now
+chat_name     = ARGV[1]
+start_time    = ARGV[2] ? Time.parse(ARGV[1]) : 7.day.ago
+end_time      = ARGV[3] ? Time.parse(ARGV[2]) : Time.now
+
+if file_location == nil
+  raise 'Invalid file location'
+end
+
+if chat_name == nil
+  raise 'Invalid chat name'
+end
 
 a = File.open(file_location)
 hangouts = JSON.parse(a.read) ; 0
 b = nil
 
-hangouts["conversation_state"].each do |conversation|
-  if conversation["conversation_state"]["conversation"]["name"] == "Workout Pool"
+hangouts["conversations"].each do |conversation|
+  if conversation["conversation"]["conversation"]["name"] == chat_name
     b = conversation
   end
 end ; 0
@@ -28,12 +37,12 @@ end ; 0
 participants = {}
 messages = {}
 
-b["conversation_state"]["conversation"]["participant_data"].each do |participant|
+b["conversation"]["conversation"]["participant_data"].each do |participant|
   participants[participant["id"]["chat_id"]] = participant["fallback_name"]
   messages[participant["id"]["chat_id"]] = []
 end ; 0
 
-b["conversation_state"]["event"].each do |x|
+b["events"].each do |x|
   if messages[x["sender_id"]["chat_id"]]
     messages[x["sender_id"]["chat_id"]].push(x)
   end
@@ -44,16 +53,6 @@ messages.each do |person, messages|
     Time.at(a["timestamp"].to_f / 1000000) <=> Time.at(b["timestamp"].to_f / 1000000)
   end
 end ; 0
-
-# messages["100438221012260718043"].map do |x|
-#   if x["chat_message"] && x["chat_message"]["message_content"] && x["chat_message"]["message_content"]["segment"]
-#     x["chat_message"]["message_content"]["segment"].each do |y|
-#       if messages[x["sender_id"]["chat_id"]]
-#         y["text"]
-#       end
-#     end
-#   end
-# end.flatten.compact
 
 workout_count = {}
 
